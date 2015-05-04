@@ -34,6 +34,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import javax.servlet.ServletContext;
 import javax.servlet.UnavailableException;
@@ -68,6 +69,7 @@ import org.fenixedu.academic.api.beans.FenixPerson.FenixPhoto;
 import org.fenixedu.academic.api.beans.FenixPerson.FenixRole;
 import org.fenixedu.academic.api.beans.FenixPersonCourses;
 import org.fenixedu.academic.api.beans.FenixPersonCourses.FenixEnrolment;
+import org.fenixedu.academic.api.beans.FenixPersonGroup;
 import org.fenixedu.academic.api.beans.publico.FenixAbout;
 import org.fenixedu.academic.api.beans.publico.FenixCourseEvaluation;
 import org.fenixedu.academic.api.beans.publico.FenixCourseExtended;
@@ -144,6 +146,7 @@ import org.fenixedu.academic.dto.InfoWrittenTest;
 import org.fenixedu.academic.dto.externalServices.PersonInformationBean;
 import org.fenixedu.academic.dto.student.RegistrationConclusionBean;
 import org.fenixedu.academic.dto.student.RegistrationCurriculumBean;
+import org.fenixedu.academic.predicate.AccessControl;
 import org.fenixedu.academic.service.Factory.RoomSiteComponentBuilder;
 import org.fenixedu.academic.service.services.student.EnrolStudentInWrittenEvaluation;
 import org.fenixedu.academic.service.services.student.UnEnrollStudentInWrittenEvaluation;
@@ -330,6 +333,42 @@ public class FenixAPIv1 {
         }
 
         return new FenixPersonCourses(enrolments, teachingCourses);
+    }
+
+    /**
+     * Person courses (enrolled if student and teaching if teacher)
+     *
+     * @summary Person courses
+     * @param sem
+     *            selected semester ("1" | "2")
+     * @param year
+     *            selected year ("yyyy/yyyy")
+     * @return enrolled courses and teaching courses
+     * @servicetag CURRICULAR_SCOPE
+     */
+    @FenixAPIScope(CURRICULAR_SCOPE)
+    @OAuthEndpoint(CURRICULAR_SCOPE)
+    @GET
+    @Produces(JSON_UTF8)
+    @Path("person/groups/")
+    public List<FenixPersonGroup> personGroups(@QueryParam("academicTerm") String academicTerm,
+            @QueryParam("courseId") String courseId) {
+
+        return getPerson()
+                .getStudent()
+                .getRegistrationsSet()
+                .stream()
+                .flatMap(registration -> registration.getAssociatedAttendsSet().stream())
+                .map(Attends::getExecutionCourse)
+                .filter(executionCourse -> (courseId == null || courseId.isEmpty()) ? true : executionCourse.getExternalId()
+                        .equals(courseId))
+                .filter(executionCourse -> executionCourse.getExecutionPeriod() == ExecutionSemester
+                        .readActualExecutionSemester())
+                .flatMap(executionCourse -> executionCourse.getGroupings().stream())
+                .flatMap(grouping -> grouping.getStudentGroupsSet().stream())
+                .filter(studentGroup -> studentGroup.getAttendsSet().stream()
+                        .anyMatch(attends -> attends.getRegistration().getPerson() == AccessControl.getPerson()))
+                .map(sg -> new FenixPersonGroup(sg)).collect(Collectors.toList());
     }
 
     public Set<ExecutionSemester> getExecutionSemesters(String academicTerm) {
