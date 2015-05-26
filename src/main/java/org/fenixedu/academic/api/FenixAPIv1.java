@@ -157,6 +157,7 @@ import org.fenixedu.academic.util.ContentType;
 import org.fenixedu.academic.util.EvaluationType;
 import org.fenixedu.bennu.core.domain.Bennu;
 import org.fenixedu.bennu.core.domain.User;
+import org.fenixedu.bennu.core.rest.BennuRestResource;
 import org.fenixedu.bennu.core.security.Authenticate;
 import org.fenixedu.bennu.core.util.CoreConfiguration;
 import org.fenixedu.bennu.oauth.annotation.OAuthEndpoint;
@@ -191,7 +192,7 @@ import com.google.gson.JsonPrimitive;
 
 @SuppressWarnings("unchecked")
 @Path("/fenix/v1")
-public class FenixAPIv1 {
+public class FenixAPIv1 extends BennuRestResource {
 
     private static final Logger logger = LoggerFactory.getLogger(FenixAPIv1.class);
 
