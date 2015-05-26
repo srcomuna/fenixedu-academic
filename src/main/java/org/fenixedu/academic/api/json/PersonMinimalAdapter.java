@@ -23,9 +23,9 @@ public class PersonMinimalAdapter implements JsonAdapter<Person> {
     @Override
     public JsonElement view(Person person, JsonBuilder jsonBuilder) {
         JsonObject json = new JsonObject();
+        json.addProperty("username", person.getUsername());
         json.addProperty("name", person.getName());
         json.addProperty("email", person.getEmailForSendingEmails());
-        json.addProperty("username", person.getUsername());
         return json;
     }
 }
